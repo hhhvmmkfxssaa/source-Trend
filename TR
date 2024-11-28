@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+cd $(cd $(dirname $0); pwd)
+
+if [ ! -f "./TR.txt" ]; then
+lua ./TREND.lua
+exit;
+else
+Token=`cat ./TR.txt`
+BotId=`echo $Token | cut -f1 -d":"`
+BotUser=$(redis-cli get ${BotId}:BotUser:)
+if [[ $BotUser == "" ]]; then
+rm -fr ./TR.txt
+lua ./TREND.lua
+exit;
+fi
+fi
+
+chmod +x ./tg
+
+if [ "$1" == "F" ]; then
+while(true) do
+sudo rm -fr ~/.telegram-cli
+./tg -s ./TREND.lua $@ --bot=$Token
+done
+else
+if ! screen -list | grep -q "$BotUser"; then
+screen -S $BotUser ./TR F
+else
+screen -X -S $BotUser quit
+screen -S $BotUser ./TR F
+fi
+fi
